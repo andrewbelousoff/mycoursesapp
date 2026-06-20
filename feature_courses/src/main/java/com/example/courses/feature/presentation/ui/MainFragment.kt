@@ -3,19 +3,20 @@ package com.example.courses.feature.presentation.ui
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
-import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.example.courses.core.data.repository.CoursesRepositoryImpl
-import com.example.courses.core.domain.model.Course
-import com.example.courses.feature.R
-import com.example.courses.feature.databinding.FragmentMainBinding
-import com.example.courses.feature.presentation.adapter.courseAdapterDelegate
-import com.example.courses.feature.presentation.viewmodel.CoursesUiState
-import com.example.courses.feature.presentation.viewmodel.CoursesViewModel
-import com.hannesdorfmann.adapterdelegates4.AsyncListDifferDelegationAdapter
 import androidx.recyclerview.widget.DiffUtil
+import com.example.courses.feature.R
+import com.example.courses.feature.data.repository.CoursesRepositoryImpl
+import com.example.courses.feature.databinding.FragmentMainBinding
+import com.example.courses.core.domain.model.Course
+import com.example.courses.feature.presentation.viewmodel.CoursesViewModel
+import com.example.courses.feature.presentation.viewmodel.CoursesUiState
+import com.example.courses.feature.presentation.adapter.courseAdapterDelegate
+import com.hannesdorfmann.adapterdelegates4.AsyncListDifferDelegationAdapter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -24,25 +25,37 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     private var _binding: FragmentMainBinding? = null
     private val binding get() = _binding!!
 
-    // Инициализируем репозиторий и ViewModel напрямую для экономии времени (без DI-библиотек)
     private val viewModel: CoursesViewModel by lazy {
-        CoursesViewModel(CoursesRepositoryImpl(requireContext().applicationContext))
+        val factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val repository = CoursesRepositoryImpl(requireActivity().applicationContext)
+                return CoursesViewModel(repository) as T
+            }
+        }
+        ViewModelProvider(this, factory)[CoursesViewModel::class.java]
     }
 
     private var allCourses: List<Course> = emptyList()
 
-    private val adapter by lazy {
-        AsyncListDifferDelegationAdapter(
+    private val coursesAdapter by lazy {
+        AsyncListDifferDelegationAdapter<Course>(
             object : DiffUtil.ItemCallback<Course>() {
-                override fun itemsTheSame(oldItem: Course, newItem: Course): Boolean = oldItem.id == newItem.id
-                override fun contentsTheSame(oldItem: Course, newItem: Course): Boolean = oldItem == newItem
+                override fun areItemsTheSame(oldItem: Course, newItem: Course): Boolean = oldItem.id == newItem.id
+                override fun areContentsTheSame(oldItem: Course, newItem: Course): Boolean = oldItem == newItem
             },
             courseAdapterDelegate(
                 onCourseClick = { course ->
-                    Toast.makeText(requireContext(), "Клик на курс: ${course.title}", Toast.LENGTH_SHORT).show()
+                    val infoText = "${course.title}\n\n${course.description}\n\nЦена: ${course.price} rgb."
+                    val detailFragment = CourseDetailFragment.newInstance(infoText)
+                    val containerId = requireActivity().resources.getIdentifier("fragment_container", "id", requireActivity().packageName)
+                    if (containerId != 0) {
+                        parentFragmentManager.beginTransaction().replace(containerId, detailFragment).addToBackStack(null).commit()
+                    }
                 },
                 onLikeClick = { course ->
-                    viewModel.onLikeClicked(course)
+                    // АДАПТЕР ФОРМАТА: переводим строковый id объекта в число Int строго для вызова ViewModel
+                    val adaptedIdInt = course.id.toString().toIntOrNull() ?: 0
+                    viewModel.onLikeClicked(course) 
                 }
             )
         )
@@ -52,12 +65,38 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentMainBinding.bind(view)
 
-        binding.rvCourses.adapter = adapter
+        binding.rvCourses.adapter = coursesAdapter
         setupSearchView()
 
         viewModel.uiState
             .onEach { state -> renderState(state) }
             .launchIn(viewLifecycleOwner.lifecycleScope)
+    }
+
+    private fun setupSearchView() {
+        binding.searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                binding.searchView.clearFocus()
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterCourses(newText ?: "")
+                return true
+            }
+        })
+    }
+
+    private fun filterCourses(query: String) {
+        val filteredList = if (query.isEmpty()) {
+            allCourses
+        } else {
+            allCourses.filter { course ->
+                course.title.contains(query, ignoreCase = true) ||
+                course.description.contains(query, ignoreCase = true)
+            }
+        }
+        coursesAdapter.items = filteredList
+        coursesAdapter.notifyDataSetChanged()
     }
 
     private fun renderState(state: CoursesUiState) {
@@ -70,28 +109,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             is CoursesUiState.Error -> {
                 Toast.makeText(requireContext(), state.message, Toast.LENGTH_LONG).show()
             }
-            CoursesUiState.Loading -> { /* Идет загрузка */ }
-        }
-    }
-
-    private fun setupSearchView() {
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean = false
-            override fun onQueryTextChange(newText: String?): Boolean {
-                filterCourses(newText.orEmpty())
-                return true
-            }
-        })
-    }
-
-    private fun filterCourses(query: String) {
-        if (query.isEmpty()) {
-            adapter.items = allCourses
-        } else {
-            adapter.items = allCourses.filter {
-                it.title.contains(query, ignoreCase = true) || 
-                it.description.contains(query, ignoreCase = true)
-            }
+            CoursesUiState.Loading -> { /* Загрузка */ }
         }
     }
 
