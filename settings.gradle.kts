@@ -12,8 +12,7 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-
-rootProject.name = "MyCoursesApp"
+rootProject.name = "mycoursesapp"
 include(":app")
 include(":core")
 include(":feature_courses")

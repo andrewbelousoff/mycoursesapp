@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class MainFragment : Fragment(R.layout.fragment_main) {
+class FavoritesFragment : Fragment(R.layout.fragment_main) {
 
     private val viewModel: CoursesViewModel by viewModel()
     
@@ -28,10 +28,11 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         val recyclerView = view.findViewById<RecyclerView>(R.id.rvMain)
         recyclerView.adapter = coursesAdapter
 
-        // Просто отдаем готовый список курсов в нативный адаптер
+        // Фильтруем чистый список курсов по флагу из базы Room
         viewModel.mainScreenState
             .onEach { courses ->
-                coursesAdapter.submitList(courses)
+                val favoriteCourses = courses.filter { it.isLiked }
+                coursesAdapter.submitList(favoriteCourses)
             }
             .launchIn(viewLifecycleOwner.lifecycleScope)
     }
@@ -40,7 +41,6 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         val fragment = CourseDetailFragment.newInstance(courseId)
         val context = requireContext()
         val containerId = context.resources.getIdentifier("fragment_container", "id", context.packageName)
-        
         if (containerId != 0) {
             parentFragmentManager.beginTransaction()
                 .replace(containerId, fragment)
