@@ -40,16 +40,11 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        // Теперь фрагмент гарантированно найдет именно ту вьюху, в которую ты тыкаешь пальцем!
         val etSearch = view.findViewById<EditText>(R.id.et_catalog_search)
         val tvSortButton = view.findViewById<TextView>(R.id.tvSortButton)
 
-
-        // ПРИНУДИТЕЛЬНО: Сбрасываем любые системные фильтры EditText (Digits, Email и т.д.),
-        // очищая массив фильтров ввода. Клавиатура эмулятора начнет пропускать кириллицу в дебаггер!
         etSearch?.filters = arrayOf()
-
-        // ИСПРАВЛЕНО: Чистый TextWatcher без регулярных выражений Входа! Кириллица теперь РАБОТАЕТ
+        
         etSearch?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -58,19 +53,20 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             }
         })
 
-        tvSortButton?.setOnClickListener { viewModel.toggleSort() }
+        // ИСПРАВЛЕНО: Скролл наверх триггерится СТРОГО при клике на кнопку сортировки,
+        // давая адаптеру 50мс на перестроение. При кликах на звезды экран больше не прыгнет!
+        tvSortButton?.setOnClickListener { 
+            viewModel.toggleSort() 
+            viewLifecycleOwner.lifecycleScope.launch {
+                delay(50)
+                recyclerView.scrollToPosition(0)
+            }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.catalogState.collect { courses ->
                     adapter.submitList(courses)
-                    
-                    // ИСПРАВЛЕНО: Даем адаптеру 50 миллисекунд фонового времени, чтобы перестроить ячейки,
-                    // после чего принудительно выкидываем скролл на самую верхнюю (нулевую) плитку по ТЗ!
-                    launch {
-                        delay(50)
-                        recyclerView.scrollToPosition(0)
-                    }
                 }
             }
         }
