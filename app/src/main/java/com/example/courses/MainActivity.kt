@@ -7,26 +7,27 @@ import androidx.fragment.app.Fragment
 import com.example.courses.feature.presentation.ui.MainFragment
 import com.example.courses.feature.presentation.ui.FavoritesFragment
 import com.example.courses.feature.presentation.ui.AccountFragment
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.example.courses.feature.presentation.ui.LoginFragment
+import com.example.courses.feature.presentation.ui.LoginNavigation
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), LoginNavigation {
 
     private val mainFragment by lazy { MainFragment() }
     private val favoritesFragment by lazy { FavoritesFragment() }
     private val accountFragment by lazy { AccountFragment() }
     
-    // Переменная для хранения текущего видимого экрана
     private var activeFragment: Fragment = mainFragment
-    
-    private lateinit var bottomNavigation: BottomNavigationView
+    private var bottomNavigation: View? = null // Делаем вьюшку nullable для безопасности
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Безопасный поиск нижнего меню
         bottomNavigation = findViewById(R.id.bottom_navigation)
 
-        bottomNavigation.setOnItemSelectedListener { item ->
+        val bottomNavView = bottomNavigation as? com.google.android.material.bottomnavigation.BottomNavigationView
+        bottomNavView?.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_main -> {
                     switchFragment(mainFragment)
@@ -44,30 +45,38 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        bottomNavigation.visibility = View.VISIBLE
-        
-        // ИСПРАВЛЕНО: Добавляем все три экрана в память один раз при старте.
-        // Главный экран показываем, а Избранное и Аккаунт — прячем в бэкграунд.
+        // ИСПРАВЛЕНО: Безопасное скрытие меню через оператор ?. 
+        // Приложение больше никогда не упадет на старте с ошибкой NullPointerException!
         if (savedInstanceState == null) {
+            bottomNavigation?.visibility = View.GONE
             supportFragmentManager.beginTransaction()
-                .add(R.id.fragment_container, accountFragment, "profile").hide(accountFragment)
-                .add(R.id.fragment_container, favoritesFragment, "favorites").hide(favoritesFragment)
-                .add(R.id.fragment_container, mainFragment, "main")
+                .add(R.id.fragment_container, LoginFragment(), "login")
                 .commit()
-            activeFragment = mainFragment
         }
     }
 
-    // ИСПРАВЛЕНО: Вместо уничтожения экранов через replace(), мы просто прячем 
-    // текущий экран и показываем нужный. Адаптеры и состояния внутри фрагментов сохраняются намертво!
+    override fun onLoginSuccess() {
+        bottomNavigation?.visibility = View.VISIBLE // Безопасно показываем меню при успешном входе
+        
+        val bottomNavView = bottomNavigation as? com.google.android.material.bottomnavigation.BottomNavigationView
+        
+        supportFragmentManager.beginTransaction()
+            .remove(supportFragmentManager.findFragmentByTag("login")!!)
+            .add(R.id.fragment_container, accountFragment, "profile").hide(accountFragment)
+            .add(R.id.fragment_container, favoritesFragment, "favorites").hide(favoritesFragment)
+            .add(R.id.fragment_container, mainFragment, "main")
+            .commit()
+            
+        activeFragment = mainFragment
+        bottomNavView?.selectedItemId = R.id.nav_main
+    }
+
     private fun switchFragment(targetFragment: Fragment) {
         if (activeFragment == targetFragment) return
-        
         supportFragmentManager.beginTransaction()
             .hide(activeFragment)
             .show(targetFragment)
             .commit()
-            
         activeFragment = targetFragment
     }
 }

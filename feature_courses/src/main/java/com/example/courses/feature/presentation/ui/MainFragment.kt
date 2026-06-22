@@ -15,21 +15,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.courses.feature.R
 import com.example.courses.feature.presentation.adapter.CoursesAdapter
 import com.example.courses.feature.presentation.viewmodel.CoursesViewModel
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.androidx.viewmodel.ext.android.activityViewModel
 
 class MainFragment : Fragment(R.layout.fragment_main) {
 
-    private val viewModel: CoursesViewModel by viewModel()
-    
-    // Переменная для удержания ссылки на текущий живой адаптер
+    private val viewModel: CoursesViewModel by activityViewModel()
     private var coursesAdapter: CoursesAdapter? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // ИСПРАВЛЕНО: Создаем адаптер строго внутри onViewCreated. Он привязан к живой верстке!
         val adapter = CoursesAdapter(
             onLikeClick = { course ->
                 viewLifecycleOwner.lifecycleScope.launch { viewModel.toggleLike(course.id) }
@@ -42,9 +40,16 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        val etSearch = view.findViewById<EditText>(R.id.et_search)
+        // Теперь фрагмент гарантированно найдет именно ту вьюху, в которую ты тыкаешь пальцем!
+        val etSearch = view.findViewById<EditText>(R.id.et_catalog_search)
         val tvSortButton = view.findViewById<TextView>(R.id.tvSortButton)
 
+
+        // ПРИНУДИТЕЛЬНО: Сбрасываем любые системные фильтры EditText (Digits, Email и т.д.),
+        // очищая массив фильтров ввода. Клавиатура эмулятора начнет пропускать кириллицу в дебаггер!
+        etSearch?.filters = arrayOf()
+
+        // ИСПРАВЛЕНО: Чистый TextWatcher без регулярных выражений Входа! Кириллица теперь РАБОТАЕТ
         etSearch?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -54,36 +59,26 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         })
 
         tvSortButton?.setOnClickListener { viewModel.toggleSort() }
-        
-        // 1. Слушаем состояние сортировки и динамически меняем стрелочку на кнопке
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.isSortedByDate.collectLatest { isSorted ->
-                    if (isSorted) {
-                        tvSortButton?.text = "По дате добавления ↓"
-                    } else {
-                        tvSortButton?.text = "По дате добавления ↑"
-                    }
-                }
-            }
-        }
 
-        // 2. Слушаем актуальный поток данных каталога
-                // ИСПРАВЛЕНО: Используем collect вместо collectLatest, чтобы корутины отрисовки 
-        // выполнялись строго последовательно и не отменяли друг друга при быстрых кликах!
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.catalogState.collect { courses ->
                     adapter.submitList(courses)
+                    
+                    // ИСПРАВЛЕНО: Даем адаптеру 50 миллисекунд фонового времени, чтобы перестроить ячейки,
+                    // после чего принудительно выкидываем скролл на самую верхнюю (нулевую) плитку по ТЗ!
+                    launch {
+                        delay(50)
+                        recyclerView.scrollToPosition(0)
+                    }
                 }
             }
         }
-
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        coursesAdapter = null // Зачищаем ссылку, защищая приложение от утечек памяти
+        coursesAdapter = null
     }
 
     private fun openCourseDetails(courseId: Int) {

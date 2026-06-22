@@ -26,8 +26,13 @@ class CoursesViewModel(
         val filtered = if (query.isBlank()) {
             courses
         } else {
-            courses.filter { it.title.contains(query, ignoreCase = true) }
+            // ИСПРАВЛЕНО: Принудительно переводим обе строки в нижний регистр через lowercase().
+            // Это гарантирует стабильную работу поиска на кириллице независимо от больших/маленьких букв!
+            courses.filter { 
+                it.title.lowercase().contains(query.lowercase()) 
+            }
         }
+
         
         // ИСПРАВЛЕНО: Реализуем честный переворот списка «с ног на голову» по ТЗ.
         // Заменяем пустые даты на дефолтные, чтобы они не ломали математику Kotlin.

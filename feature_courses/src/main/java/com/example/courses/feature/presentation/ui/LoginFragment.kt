@@ -21,12 +21,14 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         val btnVk = view.findViewById<Button>(R.id.btnVk)
         val btnOk = view.findViewById<Button>(R.id.btnOk)
 
+        // Регулярное выражение валидации почты по ТЗ (без кириллического текста)
         val emailPattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$".toRegex()
 
         fun validateInput() {
             val emailText = etEmail.text.toString().trim()
             val passwordText = etPassword.text.toString()
 
+            // Кнопка активна только при полном совпадении с маской и непустом пароле
             val isValid = emailText.matches(emailPattern) && passwordText.isNotEmpty()
             btnLogin.isEnabled = isValid
         }
@@ -34,8 +36,13 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         etEmail.doAfterTextChanged { validateInput() }
         etPassword.doAfterTextChanged { validateInput() }
 
+        // ПРЕДЗАПОЛНЕНИЕ ДЛЯ ТЕСТОВ: Вставляем готовые данные по твоему требованию
+        etEmail.setText("test@gmail.com")
+        etPassword.setText("12345")
+        validateInput() // Принудительно разблокируем зелёную кнопку «Вход»
+
         btnLogin.setOnClickListener {
-            // ИСПРАВЛЕНО: Кастуем activity к интерфейсу-мосту, скрывая MainActivity от модуля фичи
+            // Вызываем безопасный метод-мост навигации в MainActivity
             (activity as? LoginNavigation)?.onLoginSuccess()
         }
 
@@ -48,3 +55,4 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         }
     }
 }
+
