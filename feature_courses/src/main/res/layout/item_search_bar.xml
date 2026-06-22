@@ -1,38 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">    
-    <FrameLayout 
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp">
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp">
+        android:layout_height="48dp"
+        android:background="@drawable/bg_search_input"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp">
 
-        <LinearLayout
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_search_category_default"
+            app:tint="#888888" />
+
+        <EditText
+            android:id="@+id/et_search"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_search_input"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="12dp">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_search_category_default"
-                app:tint="#888888" />
-
-            <EditText
-                android:id="@+id/et_search"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@null"
-                android:hint="Search courses..."
-                android:textColorHint="#888888"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:paddingHorizontal="8dp"
-                android:importantForAutofill="no"
-                android:inputType="text" />
-        </LinearLayout>
-    </FrameLayout>
-</layout>
+            android:layout_height="match_parent"
+            android:background="@null"
+            android:hint="Search courses..."
+            android:textColorHint="#888888"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:paddingHorizontal="8dp"
+            android:importantForAutofill="no"
+            android:inputType="text" />
+    </LinearLayout>
+</FrameLayout>

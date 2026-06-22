@@ -9,7 +9,7 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // Железобетонный старт: Koin и контекст инициализируются в первую секунду жизни процесса
+        // Жесткая и каноничная синхронизация Koin по ТЗ
         startKoin {
             androidContext(this@MyApplication)
             modules(featureCoursesModule)

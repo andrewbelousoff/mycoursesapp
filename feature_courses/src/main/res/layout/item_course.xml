@@ -6,21 +6,34 @@
     android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="8dp"
     app:cardCornerRadius="16dp"
-    app:cardElevation="0dp"
+    app:cardElevation="2dp"
     app:cardBackgroundColor="#1E1E1E">
 
+    <!-- ИСПРАВЛЕНО: Высота строго wrap_content, чтобы карточки шли плотной лентой друг за другом -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:padding="16dp">
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivCoursePreview"
             android:layout_width="match_parent"
-            android:layout_height="160dp"
+            android:layout_height="140dp"
             android:scaleType="centerCrop"
             app:layout_constraintTop_toTopOf="parent"
             android:src="@android:drawable/ic_menu_gallery" />
+
+        <!-- Кнопка флажка избранного в правом углу картинки -->
+        <ImageButton
+            android:id="@+id/btnLikeWidget"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_margin="8dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/btn_star_big_off"
+            app:layout_constraintEnd_toEndOf="@id/ivCoursePreview"
+            app:layout_constraintTop_toTopOf="@id/ivCoursePreview"
+            android:contentDescription="Избранное" />
 
         <TextView
             android:id="@+id/tvCourseTitle"
@@ -32,17 +45,29 @@
             android:textStyle="bold"
             app:layout_constraintTop_toBottomOf="@id/ivCoursePreview" />
 
+        <!-- Текст описания: строго максимум 2 строки с троеточием на конце по ТЗ -->
+        <TextView
+            android:id="@+id/tvCourseDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="#AAAAAA"
+            android:textSize="14sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/tvCourseTitle" />
+
         <TextView
             android:id="@+id/tvCoursePrice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textColor="#FFFFFF"
+            android:layout_marginTop="16dp"
+            android:textColor="#00C853"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvCourseTitle" />
+            app:layout_constraintTop_toBottomOf="@id/tvCourseDescription" />
 
         <Button
             android:id="@+id/btn_details"
@@ -54,7 +79,8 @@
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvCourseTitle" />
+            app:layout_constraintTop_toBottomOf="@id/tvCourseDescription" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>
+

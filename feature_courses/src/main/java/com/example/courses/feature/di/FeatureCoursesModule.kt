@@ -8,13 +8,9 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val featureCoursesModule = module {
-    // Используем androidApplication(), чтобы репозиторий получил вечный, безопасный контекст для Room
     single<CoursesRepository> { 
         CoursesRepositoryImpl(context = androidApplication()) 
     }
-    
-    // Koin сам возьмет созданный выше репозиторий через метод get() и передаст его во ViewModel
-    viewModel { 
-        CoursesViewModel(repository = get()) 
-    }
+    viewModel { CoursesViewModel(repository = get()) }
 }
+

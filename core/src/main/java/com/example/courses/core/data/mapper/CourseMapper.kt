@@ -1,16 +1,24 @@
 package com.example.courses.core.data.mapper
 
-import com.example.courses.core.data.model.CourseDto
+import com.example.courses.core.data.repository.LikedCourseEntity
 import com.example.courses.core.domain.model.Course
 
-fun CourseDto.toDomain(): Course {
+fun Course.toEntity(): LikedCourseEntity {
+    return LikedCourseEntity(
+        courseId = this.id
+    )
+}
+
+// ИСПРАВЛЕНО: Маппинг полей строго под новые требования твоего ТЗ
+fun Course.mapToDomain(isLiked: Boolean): Course {
     return Course(
-        id = this.id ?: 0,
-        title = this.title.orEmpty(),
-        description = this.text.orEmpty(),
-        price = this.price.orEmpty(),
-        rating = this.rate?.toFloatOrNull() ?: 0.0f,
-        startDate = this.startDate.orEmpty(),
-        isLiked = this.hasLike ?: false
+        id = this.id,
+        title = this.title,
+        text = this.text,         // Новое поле text
+        price = this.price,
+        rate = this.rate,         // Новое поле rate
+        startDate = this.startDate,
+        publishDate = this.publishDate, // Поле даты для сортировки
+        hasLike = isLiked         // Новое поле hasLike
     )
 }
